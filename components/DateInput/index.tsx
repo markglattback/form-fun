@@ -1,12 +1,13 @@
 import { ErrorMessage } from 'formik';
 import validateDateArgs from 'lib/validateDateArgs';
-import { ChangeEvent, RefObject, SyntheticEvent, useEffect, useReducer, useRef, useState } from 'react';
+import { ChangeEvent, Dispatch, RefObject, SetStateAction, SyntheticEvent, useEffect, useReducer, useRef, useState } from 'react';
 import StyledErrorMessage from 'styles/StyledErrorMessage';
 import StyledIconContainer from 'styles/StyledIconContainer';
 import * as yup from 'yup';
+import DateInputContext, { useDateContext } from './context';
 import ResetButton from './ResetButton';
 import { InlineDateInputsContainer, SpanContainer, StyledDateInputWrapper } from './styles';
-import { ComputedSectionName, DateInputProps, DateSectionName, DateSectionProps, GenerateSectionsProps, InputRefs, NewDateValue, OnChangeHandler, ValueReducerAction, ValueState } from './types';
+import { ComputedSectionName, DateInputProps, DateSectionName, DateSectionProps, GenerateSectionsProps, InputRefs, NewDateValue, ParentChangeHandler, ValueReducerAction, ValueState } from './types';
 
 
 const validationSchema = yup.object().shape({
@@ -25,7 +26,9 @@ function SectionInput ({ maxLength, name, onChange, onBlur, onFocus, section, in
   const [error, setError] = useState(false);
   const placeholder = section === 'Y' ? 'YYYY' : `${section}${section}`;
 
-  function handleChange(e: ChangeEvent<HTMLInputElement>) {
+  const { values, dispatch } = useDateContext();
+
+  function handleChangeWithContext (e: ChangeEvent<HTMLInputElement>) {
     // trim off excess in case of copy/paste
     let value = e.target.value.slice(0, maxLength);
 
@@ -41,11 +44,32 @@ function SectionInput ({ maxLength, name, onChange, onBlur, onFocus, section, in
       if (section === 'M') {
         if (num > 1) value = `0${value}`
       }
-    }
+    }    
 
-
-    setValue(value);
+    dispatch({ section, value });
   }
+
+  // function handleChange(e: ChangeEvent<HTMLInputElement>) {
+  //   // trim off excess in case of copy/paste
+  //   let value = e.target.value.slice(0, maxLength);
+
+  //   // don't update field if not a valid number
+  //   const num = parseInt(value || '0', 10);
+  //   if (isNaN(num)) return;
+  
+  //   if (value.length < 2) {
+  //     if (section === 'D') {
+  //       if (num > 3) value = `0${value}`;
+  //     }
+  
+  //     if (section === 'M') {
+  //       if (num > 1) value = `0${value}`
+  //     }
+  //   }
+
+
+  //   setValue(value);
+  // }
   
   function handleFocus (e: SyntheticEvent<HTMLInputElement>) {
     inputRef.current?.setSelectionRange(0, -1);
@@ -54,8 +78,8 @@ function SectionInput ({ maxLength, name, onChange, onBlur, onFocus, section, in
   }
 
   useEffect(() => {
-    onChange(section, value, { currentType: section, next: value.length === maxLength });
-  }, [value]);
+    onChange(value.length === maxLength);
+  }, [values[section]]);
 
   return <input 
     id={name} 
@@ -65,10 +89,10 @@ function SectionInput ({ maxLength, name, onChange, onBlur, onFocus, section, in
     inputMode="numeric" 
     pattern="[0-9]*" 
     maxLength={maxLength} 
-    onChange={handleChange} 
+    onChange={handleChangeWithContext} 
     onBlur={onBlur}
     onFocus={handleFocus} 
-    value={value} 
+    value={values[section]} 
     placeholder={placeholder} 
     data-section={section} 
     style={error ? { color: 'var(--errorRed)' } : {}} />
@@ -89,6 +113,22 @@ function GeneratedSections({ field, inputRefs, onChange, onBlur, onFocus, sectio
   )
 }
 
+function Reset({ inputRefs, sectionOrder, sectionCompletedSetters }: { inputRefs: InputRefs, sectionOrder: DateSectionName[], sectionCompletedSetters: Dispatch<SetStateAction<boolean>>[]}) {
+  const { values, dispatch: dispatchValues } = useDateContext();
+
+  function handleReset(e: SyntheticEvent<HTMLDivElement>) {       
+    dispatchValues({ section: 'reset', value: '' });
+    sectionCompletedSetters[0](false);
+    sectionCompletedSetters[1](false);
+    sectionCompletedSetters[2](false);
+    inputRefs[sectionOrder[0]].current?.focus();
+  }
+
+  return (
+    <div className="reset-icon" onClick={handleReset} ><ResetButton /></div>
+  )
+}
+
 
 export default function DateInput({ label, field, form: { touched, errors, setFieldValue, setTouched, values }, format, ...props  }: DateInputProps) { 
   const isTouched = touched[field.name] ? true : false;
@@ -106,43 +146,47 @@ export default function DateInput({ label, field, form: { touched, errors, setFi
   function getSectionIndex(section: DateSectionName) {
     return sectionOrder.indexOf(section);
   }
-  /*** INTERNAL VALUE STATE SETUP WITH USEREDUCER ***/
 
-  const initialState: ValueState = {
-    D: '',
-    M: '',
-    Y: '',
-    valuesArray: ['', '', ''],
-    valuesString: ''
-  }
+  const { values: internalValues, dispatch: dispatchValues } = useDateContext();
+
+
+  // /*** INTERNAL VALUE STATE SETUP WITH USEREDUCER ***/
+
+  // const initialState: ValueState = {
+  //   D: '',
+  //   M: '',
+  //   Y: '',
+  //   valuesArray: ['', '', ''],
+  //   valuesString: ''
+  // }
   
-  const reducer = (prevState: ValueState, action: ValueReducerAction): ValueState => {
+  // const reducer = (prevState: ValueState, action: ValueReducerAction): ValueState => {
 
-    function makeNewValues(section: DateSectionName): Pick<ValueState, 'valuesArray' | 'valuesString'> {
-      const index = getSectionIndex(section);
+  //   function makeNewValues(section: DateSectionName): Pick<ValueState, 'valuesArray' | 'valuesString'> {
+  //     const index = getSectionIndex(section);
 
-      const newValuesArray = [...prevState.valuesArray];
-      newValuesArray[index] = action.value;
-      const newValuesString = newValuesArray.join('/');
+  //     const newValuesArray = [...prevState.valuesArray];
+  //     newValuesArray[index] = action.value;
+  //     const newValuesString = newValuesArray.join('/');
 
-      return { valuesArray: newValuesArray, valuesString: newValuesString };
-    }
+  //     return { valuesArray: newValuesArray, valuesString: newValuesString };
+  //   }
 
-    switch(action.section) {
-      case 'D':
-        return { ...prevState, D: action.value, ...makeNewValues('D') };
-      case 'M':
-        return { ...prevState, M: action.value, ...makeNewValues('M') };
-      case 'Y':
-        return { ...prevState, Y: action.value, ...makeNewValues('Y') };
-      case 'reset':
-        return initialState;
-      default:
-        return prevState;
-    }
-  }
+  //   switch(action.section) {
+  //     case 'D':
+  //       return { ...prevState, D: action.value, ...makeNewValues('D') };
+  //     case 'M':
+  //       return { ...prevState, M: action.value, ...makeNewValues('M') };
+  //     case 'Y':
+  //       return { ...prevState, Y: action.value, ...makeNewValues('Y') };
+  //     case 'reset':
+  //       return initialState;
+  //     default:
+  //       return prevState;
+  //   }
+  // }
 
-  const [internalValues, dispatchValues] = useReducer(reducer, initialState);
+  // const [internalValues, dispatchValues] = useReducer(reducer, initialState);
 
   // used to focus on the next input
   const inputRefs = {
@@ -151,20 +195,9 @@ export default function DateInput({ label, field, form: { touched, errors, setFi
     'Y': useRef<HTMLInputElement>(null),
   }
 
-  const handleSectionChange: OnChangeHandler = (section, value, position) => {     
-    let normalisedValue = value;
-    
-    if (section === 'D' || section === 'M') {
-           
-      if (value.length > 0 && value.length < 2) {
-        normalisedValue = `0${value}`
-      }
-    }
-    
-    dispatchValues({ section, value: normalisedValue });
-
+  const handleSectionChange: ParentChangeHandler = (next) => {     
     // target next input
-    if (position.next) {
+    if (next) {
       switch(currentIndex) {
         case 0: 
           setSectionOneComplete(true);
@@ -198,16 +231,11 @@ export default function DateInput({ label, field, form: { touched, errors, setFi
     sectionCompletedSetters[index](true);
   }
 
-  function handleReset(e: SyntheticEvent<HTMLDivElement>) {
-    dispatchValues({ section: 'reset', value: '' });
-    setSectionOneComplete(false);
-    setSectionTwoComplete(false);
-    setSectionThreeComplete(false);
-    inputRefs[sectionOrder[0]].current?.focus();
-  }
-
   /***  UPDATE FORMIK FIELD  ***/
   useEffect(() => {
+    console.log('useeffect being called');
+    
+
     // make sure all values match formats
     if (internalValues.D.length < 2) {
       sectionCompletedSetters[getSectionIndex('D')](false);
@@ -244,24 +272,24 @@ export default function DateInput({ label, field, form: { touched, errors, setFi
   }, [currentIndex]);
 
   return (
-    <>
-    <StyledDateInputWrapper>
-      <input type="hidden" {...field} {...props} />
-      <InlineDateInputsContainer isTouched={isTouched} hasErrors={hasErrors} hasFocus={hasFocus} value={field.value} >
-          <GeneratedSections field={field} sectionOrder={sectionOrder} onChange={handleSectionChange} inputRefs={inputRefs} onBlur={handleSelectionBlur} onFocus={handleSectionFocus} sectionsCompleted={{ 1: sectionOneComplete, 2: sectionTwoComplete, 3: sectionThreeComplete }} values={internalValues.valuesArray} />
-        <label htmlFor={field.name}>
-          {label}
-        </label>
-        <StyledIconContainer>
-          {(hasErrors && !hasFocus) && (<div className="error-icon"></div>)}
-          {/* <div className="reset-icon" onClick={handleReset} ><ResetButton /></div> */}
-        </StyledIconContainer>
-      </InlineDateInputsContainer>
-    </StyledDateInputWrapper>
-     <StyledErrorMessage>
+    <DateInputContext getSectionIndex={getSectionIndex}>
+      <StyledDateInputWrapper>
+        <input type="hidden" {...field} {...props} />
+        <InlineDateInputsContainer isTouched={isTouched} hasErrors={hasErrors} hasFocus={hasFocus} value={field.value} >
+            <GeneratedSections field={field} sectionOrder={sectionOrder} onChange={handleSectionChange} inputRefs={inputRefs} onBlur={handleSelectionBlur} onFocus={handleSectionFocus} sectionsCompleted={{ 1: sectionOneComplete, 2: sectionTwoComplete, 3: sectionThreeComplete }} values={internalValues.valuesArray} />
+          <label htmlFor={field.name}>
+            {label}
+          </label>
+          <StyledIconContainer>
+            {(hasErrors && !hasFocus) && (<div className="error-icon"></div>)}
+            <Reset inputRefs={inputRefs} sectionCompletedSetters={sectionCompletedSetters} sectionOrder={sectionOrder} />
+          </StyledIconContainer>
+        </InlineDateInputsContainer>
+      </StyledDateInputWrapper>
+      <StyledErrorMessage>
         <ErrorMessage name={field.name} component="span" />
       </StyledErrorMessage>
-    </>
+    </DateInputContext>
   )
 }
 
