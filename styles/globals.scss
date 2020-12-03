@@ -1,0 +1,53 @@
+:root {
+  --grey50: #f8fafc;
+  --grey100: #f1f5f9;
+  --grey200: #e2e8f0;
+  --grey300: #cbd5e1;
+  --grey400: #94a3b8;
+  --grey500: #64748b;
+  --grey700: #334115;
+  --primary25: #eef2ff80;
+  --primary50: #eef2ff;
+  --primary100: #e0e7ff;
+  --primary500: #6366f1;
+  --primary: var(--primary500);
+  --red50: #fef2f2;
+  --red100: #fee2e2;
+  --red400: #f87171;
+  --red500: #ef4444;
+  --red: var(--red500);
+  --errorRed: var(--red);
+  --white: #fff;
+  --black: #0f172a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+*,
+*:before,
+*:after {
+  box-sizing: inherit;
+}
+
+html,
+body {
+  padding: 0;
+  margin: 0;
+  font-family: Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto,
+    Oxygen, Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
+  color: var(--black);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+input,
+select,
+textarea {
+  font-family: Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto,
+    Oxygen, Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
+}
