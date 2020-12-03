@@ -2,7 +2,7 @@ import { Formik, Field } from 'formik';
 import * as yup from 'yup';
 import { FormFields, FormikSubmissionHandler, StageOneFieldNames } from './types';
 import TextInput from '../TextInput';
-import DateInput from 'components/DateInput';
+import DateInput from 'components/DateInput/DateInput';
 
 /*  INITIAL VALUES  ----------------------------- */
 
