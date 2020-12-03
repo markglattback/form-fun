@@ -65,6 +65,10 @@ export const InlineDateInputsContainer = styled.div<StyledProps>`
     ${({  hasFocus }) => ( hasFocus ) && css`
       color: var(--primary);
     `}
+
+    ${({ hasErrors, isTouched }) => (hasErrors && isTouched) && css`
+      color: var(--errorRed);
+    `}
   }
 
   input[maxlength="4"] {
