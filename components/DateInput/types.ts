@@ -1,5 +1,5 @@
 import { FieldProps } from "formik";
-import { ChangeEvent, InputHTMLAttributes, RefObject, SyntheticEvent } from "react";
+import { Dispatch, ReactNode, RefObject } from "react";
 
 export type DayLiteral = 'D';
 export type MonthLiteral = 'M';
@@ -8,6 +8,11 @@ export type FormattedDay = `${DayLiteral}${DayLiteral}`;
 export type FormattedMonth = `${MonthLiteral}${MonthLiteral}`;
 export type FormattedYear = `${YearLiteral}${YearLiteral}${YearLiteral}${YearLiteral}`;
 
+
+type ParentInputName = string;
+export type DateSectionName = DayLiteral | MonthLiteral | YearLiteral;
+export type ComputedSectionName = `${ParentInputName}-${DateSectionName}`;
+
 export interface DateInputProps extends FieldProps {
   label: string;
   format: `${FormattedDay}/${FormattedMonth}/${FormattedYear}` 
@@ -15,55 +20,31 @@ export interface DateInputProps extends FieldProps {
   | `${FormattedYear}/${FormattedMonth}/${FormattedDay}`;
 }
 
-type ParentInputName = string;
-export type DateSectionName = DayLiteral | MonthLiteral | YearLiteral;
-export type ComputedSectionName = `${ParentInputName}-${DateSectionName}`;
+export type DateInputLogicProps = Omit<DateInputProps, 'form' | 'format'> & {
+  errors: FieldProps['form']['errors'];
+  setFieldValue: FieldProps['form']['setFieldValue'];
+  setTouched: FieldProps['form']['setTouched'];
+  touched: FieldProps['form']['touched'];
+  getSectionIndex: (section: DateSectionName) => number;
+  sectionOrder: DateSectionName[];
+}
+
+export type GenerateSectionsProps = Pick<DateInputProps, 'field'> & {
+  inputRefs: InputRefs;
+  sectionOrder: DateSectionName[];
+  values: string[];
+}
 
 export interface DateSectionProps {
   name: ComputedSectionName;
   maxLength: 2 | 4;
-  onBlur: OnBlurHandler
-  onChange: ParentChangeHandler;
-  onFocus: OnFocusHandler;
   section: DateSectionName;
   inputRef: RefObject<HTMLInputElement>;
+  nextRef: RefObject<HTMLInputElement> | null;
 }
-
-export type GenerateSectionsProps = Pick<DateInputProps, 'field'> 
-  & Pick<DateSectionProps, 'onBlur' | 'onChange' | 'onFocus'> 
-  & {
-    sectionsCompleted: {
-      [K in 1 | 2 | 3]: boolean;
-    };
-    inputRefs: InputRefs;
-    sectionOrder: DateSectionName[];
-    values: string[];
-  }
-
 
 export type DateSectionOrder = {
   [P in DateInputProps['format']]?: DateSectionName[]; 
-}
-
-export type NewDateValue = {
-  [K in DateSectionName]: string;
-}
-
-export type ParentChangeHandler = (next: boolean) => void;
-
-export type OnFocusHandler = (e: SyntheticEvent<HTMLInputElement>) => void;
-export type OnBlurHandler = (e: SyntheticEvent<HTMLInputElement>) => void;
-
-export type ValueState = {
-  [K in DateSectionName]: string;
-} & {
-  valuesArray: string[];
-  valuesString: string;
-}
-
-export type ValueReducerAction = {
-  section: DateSectionName | 'reset';
-  value: string;
 }
 
 export type InputRefs = {
@@ -71,3 +52,27 @@ export type InputRefs = {
 }
 
 
+// Context Types
+
+export type Values = {
+  [K in DateSectionName]: string;
+} & {
+  valuesArray: string[];
+  valuesString: string;
+}
+
+
+export interface Action {
+  section: DateSectionName | 'reset';
+  value: string;
+}
+
+export interface DateInputContext {
+  values: Values;
+  dispatch: Dispatch<Action>;
+}
+
+export interface ProviderProps {
+  children: ReactNode;
+  getSectionIndex: (section: DateSectionName) => number;
+}

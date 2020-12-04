@@ -3,7 +3,6 @@ import styled, { css } from "styled-components";
 import StyledInputs from 'styles/StyledInputs';
 
 interface StyledProps {
-  hasFocus: boolean;
   hasErrors: boolean;
   isTouched: boolean;
   value: string;
@@ -43,11 +42,11 @@ export const InlineDateInputsContainer = styled.div<StyledProps>`
 
   /*  Focused Wrapper Styles ----------- */
 
-  ${({ hasFocus }) => hasFocus && css`
+  &:focus-within {
     background: var(--white);
     border-color: var(--primary);
     box-shadow: 0 0 0 3px var(--primary100);
-  `}
+  }
 
   label {
     display: block;
@@ -61,14 +60,16 @@ export const InlineDateInputsContainer = styled.div<StyledProps>`
     color: var(--grey400);
     
     /*  Active Label Styles ----------- */
-    
-    ${({  hasFocus }) => ( hasFocus ) && css`
-      color: var(--primary);
-    `}
 
     ${({ hasErrors, isTouched }) => (hasErrors && isTouched) && css`
       color: var(--errorRed);
     `}
+  }
+
+  &:focus-within {
+    label {
+      color: var(--primary);
+    }
   }
 
   input[maxlength="4"] {

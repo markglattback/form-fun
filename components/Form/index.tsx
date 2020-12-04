@@ -2,7 +2,8 @@ import { Formik, Field } from 'formik';
 import * as yup from 'yup';
 import { FormFields, FormikSubmissionHandler, StageOneFieldNames } from './types';
 import TextInput from '../TextInput';
-import DateInput from 'components/DateInput/DateInput';
+import DateInput from 'components/DateInput';
+import validationSchema from 'lib/validationSchema';
 
 /*  INITIAL VALUES  ----------------------------- */
 
@@ -16,15 +17,6 @@ const initialValues: FormFields = {
   favChocolate: null,
   comments: ''
 }
-
-/*  VALIDATION SCHEMA  -------------------------- */
-
-const validationSchema = yup.object<Partial<FormFields>>({
-  firstName: yup.string().required('Please enter your firstname'),
-  lastName: yup.string().required('Please enter your surname'),
-  email: yup.string().email('Please enter a valid email address').required('Please enter your email address'),
-  dob: yup.date().typeError('Please provide a valid date')
-});
 
 export default function Form() {
 

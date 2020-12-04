@@ -1,28 +1,5 @@
-import { createContext, Dispatch, ReactNode, useContext, useReducer } from "react";
-import { DateSectionName } from "./types";
-
-type Values = {
-  [K in DateSectionName]: string;
-} & {
-  valuesArray: string[];
-  valuesString: string;
-}
-
-
-interface Action {
-  section: DateSectionName | 'reset';
-  value: string;
-}
-
-interface Context {
-  values: Values;
-  dispatch: Dispatch<Action>;
-}
-
-interface ProviderProps {
-  children: ReactNode;
-  getSectionIndex: (section: DateSectionName) => number;
-}
+import { createContext, useContext, useMemo, useReducer } from "react";
+import { Action, DateSectionName, DateInputContext, ProviderProps, Values } from "./types";
 
 const initialValues: Values = {
   D: '',
@@ -32,13 +9,13 @@ const initialValues: Values = {
   valuesString: ''
 }
 
-const store = createContext<Context>({
+const store = createContext<DateInputContext>({
   values: initialValues,
   dispatch: (action: Action) => {},
 });
 
 
-export default function DateInputContext({ children, getSectionIndex }: ProviderProps) {
+export default function DateInputProvider({ children, getSectionIndex }: ProviderProps) {
   function reducer(prevValues: Values, action: Action): Values {
     function makeNewValues(section: DateSectionName): Pick<Values, 'valuesArray' | 'valuesString'> {
       const index = getSectionIndex(section);
@@ -48,7 +25,7 @@ export default function DateInputContext({ children, getSectionIndex }: Provider
       const newValuesString = newValuesArray.join('/');
 
       return { valuesArray: newValuesArray, valuesString: newValuesString };
-    }
+    }    
 
     switch(action.section) {
       case 'D':
@@ -63,22 +40,23 @@ export default function DateInputContext({ children, getSectionIndex }: Provider
         return prevValues;
     }
   }
+  
 
   const [ values, dispatch ] = useReducer(reducer, initialValues);
   const { Provider } = store;
 
+  const memoisedValues = useMemo(() => ({ values, dispatch }), [values['D'], values['M'], values['Y'], values['valuesArray'], values['valuesString']]);
+
   return (
-    <Provider
-      value={{
-        values,
-        dispatch: (action) => {          
-          dispatch(action);
-        }
-      }}
-    >
+    <Provider value={memoisedValues}>
       {children}
     </Provider>
   )
 }
 
-export const useDateContext = () => useContext(store);
+export const useDateContext = () => {
+  const context = useContext(store);
+  if (!context)
+    throw new Error('DateInputContext must be used within DateInputPovider.')
+  return context;
+}
