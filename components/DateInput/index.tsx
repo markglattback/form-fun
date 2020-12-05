@@ -1,33 +1,36 @@
-import * as React from 'react';
 import { ErrorMessage } from "formik";
 import validateDateArgs from "lib/validateDateArgs";
-import { ChangeEvent, SyntheticEvent, useCallback, useEffect, useMemo, useRef} from "react";
+import { ChangeEvent, FocusEvent, SyntheticEvent, useCallback, useEffect, useMemo, useReducer, useRef} from "react";
 import StyledErrorMessage from "styles/StyledErrorMessage";
 import StyledIconContainer from "styles/StyledIconContainer";
 import DateInputProvider, { useDateContext } from "./context";
 import ResetButton from "./ResetButton";
 import { InlineDateInputsContainer, StyledDateInputWrapper } from "./styles";
 import { ComputedSectionName, DateInputLogicProps, DateInputProps, DateSectionName, DateSectionProps, GenerateSectionsProps, InputRefs } from "./types";
+import useTouched from "./useTouched";
 
 export default function DateInput({ label, field, form: { errors, touched, setFieldValue, setTouched }, format, ...props }: DateInputProps) {
   const sectionOrder: DateSectionName[] = format.split('/').map(val => val.slice(0, 1)) as DateSectionName[];
-
-  function getSectionIndex(section: DateSectionName) {
-    return sectionOrder.indexOf(section);
-  };
    
   return (
-    <DateInputProvider getSectionIndex={getSectionIndex}>
-      <DateInputLogic label={label} field={field} errors={errors} touched={touched} setFieldValue={setFieldValue} setTouched={setTouched} getSectionIndex={getSectionIndex} sectionOrder={sectionOrder} {...props} />
+    <DateInputProvider sectionOrder={sectionOrder}>
+      <DateInputLogic label={label} field={field} errors={errors} touched={touched} setFieldValue={setFieldValue} setTouched={setTouched} sectionOrder={sectionOrder} {...props} />
     </DateInputProvider>
   );  
 }
 
-function DateInputLogic({ label, field, errors, touched, setFieldValue, setTouched, getSectionIndex, sectionOrder, ...props}: DateInputLogicProps) { 
+function DateInputLogic({ label, field, errors, touched, setFieldValue, setTouched, sectionOrder, ...props}: DateInputLogicProps) { 
   const { values } = useDateContext();
   
   const isTouched = touched[field.name] ? true : false;
   const hasErrors = (isTouched && errors[field.name]) ? true : false;
+
+  const [sectionsTouched, dispatchTouched] = useTouched();
+
+  function handleSectionBlur(e: FocusEvent<HTMLInputElement>) { 
+    const section = e.currentTarget.dataset.section as DateSectionName;
+    dispatchTouched({ type: 'update', section, value: true });
+  }
 
   // Refs used for focusing
   const inputRefs = {
@@ -36,7 +39,7 @@ function DateInputLogic({ label, field, errors, touched, setFieldValue, setTouch
     'Y': useRef<HTMLInputElement>(null),
   }
 
-  /***  UPDATE FORMIK FIELD  ***/
+  // update formik field value
   useEffect(() => {   
     // make sure all values match formats
     if (values.D.length < 2) {
@@ -54,10 +57,14 @@ function DateInputLogic({ label, field, errors, touched, setFieldValue, setTouch
       setFieldValue(field.name, validateDateArgs(year, month, day) || "Invalid Date");
     };   
 
-    if (values['D'].length === 2 && values['M'].length === 2 && values['Y'].length === 4) {
+  }, [values['D'], values['M'], values['Y']]);
+  
+  // touch formik field
+  useEffect(() => {
+    if (sectionsTouched['D'] && sectionsTouched['M'] && sectionsTouched['Y']) {
       setTouched({ ...touched, [field.name]: true });
     }    
-  }, [values['D'], values['M'], values['Y']]);
+  }, [sectionsTouched['D'], sectionsTouched['M'], sectionsTouched['Y'],])
   
 
   return (
@@ -65,7 +72,7 @@ function DateInputLogic({ label, field, errors, touched, setFieldValue, setTouch
       <StyledDateInputWrapper>
         <input type="hidden" {...field} {...props} />
         <InlineDateInputsContainer isTouched={isTouched} hasErrors={hasErrors} value={field.value} >
-            <GeneratedSections field={field} sectionOrder={sectionOrder} inputRefs={inputRefs} values={values.valuesArray} />
+            <GeneratedSections field={field} sectionOrder={sectionOrder} handleBlur={handleSectionBlur} inputRefs={inputRefs} values={values.valuesArray} />
           <label htmlFor={field.name}>
             {label}
           </label>
@@ -82,7 +89,7 @@ function DateInputLogic({ label, field, errors, touched, setFieldValue, setTouch
   )
 }
 
-function SectionInput ({ maxLength, name, section, inputRef, nextRef }: DateSectionProps) {
+function SectionInput ({ maxLength, name, section, inputRef, nextRef, onBlur }: DateSectionProps) {
   const { values, dispatch } = useDateContext();
   const placeholder = section === 'Y' ? 'YYYY' : `${section}${section}`;
 
@@ -130,24 +137,25 @@ function SectionInput ({ maxLength, name, section, inputRef, nextRef }: DateSect
       maxLength={maxLength} 
       onChange={handleChange} 
       onFocus={handleFocus} 
+      onBlur={onBlur}
       value={values[section]} 
       placeholder={placeholder} 
       data-section={section} 
     />
 }
 
-function GeneratedSections({ field, inputRefs, sectionOrder, values }: GenerateSectionsProps) {  
+function GeneratedSections({ field, handleBlur, inputRefs, sectionOrder, values }: GenerateSectionsProps) {  
   const maxLengths = sectionOrder.map(section => section === 'Y' ? 4 : 2);
   const sectionOneHasValue = (values[0].length === maxLengths[0]);
-  const sectionTwoHasValue = (values[1].length === maxLengths[1]);  
+  const sectionTwoHasValue = (values[1].length === maxLengths[1]);
 
   return (
     <>
-      <SectionInput name={computeSectionName(field.name, sectionOrder[0])} maxLength={maxLengths[0]} section={sectionOrder[0]} inputRef={inputRefs[sectionOrder[0]]} nextRef={inputRefs[sectionOrder[1]]} />
+      <SectionInput name={computeSectionName(field.name, sectionOrder[0])} maxLength={maxLengths[0]} section={sectionOrder[0]} onBlur={handleBlur} inputRef={inputRefs[sectionOrder[0]]} nextRef={inputRefs[sectionOrder[1]]} />
       <span className={!sectionOneHasValue ? "inactive" : undefined }>/</span>
-      <SectionInput name={computeSectionName(field.name, sectionOrder[1])} maxLength={maxLengths[1]} section={sectionOrder[1]} inputRef={inputRefs[sectionOrder[1]]} nextRef={inputRefs[sectionOrder[2]]} />
+      <SectionInput name={computeSectionName(field.name, sectionOrder[1])} maxLength={maxLengths[1]} section={sectionOrder[1]} onBlur={handleBlur} inputRef={inputRefs[sectionOrder[1]]} nextRef={inputRefs[sectionOrder[2]]} />
       <span className={!sectionTwoHasValue ? "inactive" : undefined }>/</span>
-      <SectionInput name={computeSectionName(field.name, sectionOrder[2])} maxLength={maxLengths[2]} section={sectionOrder[2]} inputRef={inputRefs[sectionOrder[2]]} nextRef={null} />
+      <SectionInput name={computeSectionName(field.name, sectionOrder[2])} maxLength={maxLengths[2]} section={sectionOrder[2]} onBlur={handleBlur} inputRef={inputRefs[sectionOrder[2]]} nextRef={null} />
     </>
   )
 }

@@ -1,8 +1,9 @@
 import { StyledInput } from "components/TextInput/styles";
+import { PropsWithoutRef } from "react";
 import styled, { css } from "styled-components";
 import StyledInputs from 'styles/StyledInputs';
 
-interface StyledProps {
+interface StyledProps extends PropsWithoutRef<JSX.IntrinsicElements['div']> {
   hasErrors: boolean;
   isTouched: boolean;
   value: string;
@@ -54,6 +55,7 @@ export const InlineDateInputsContainer = styled.div<StyledProps>`
     top: 0.375rem;
     margin-left: 0.75rem;
     font-size: 12px;
+    font-weight: 325;
     line-height: 1;
     padding: 0;
     border-radius: 0.5rem;
@@ -79,8 +81,11 @@ export const InlineDateInputsContainer = styled.div<StyledProps>`
   input {
     background: transparent;
     width: calc(2ch + 0.25rem);
+    height: 1.25rem;
     border: none;
+    box-sizing: content-box;
     font-size: 1rem;
+    line-height: 1;
     padding: 1.25rem 0px 0.375rem 0px;
     font-family: ---apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
     font-feature-settings: "tnum";
@@ -120,6 +125,7 @@ export const InlineDateInputsContainer = styled.div<StyledProps>`
     padding: 1.25rem 0 0.375rem 0;
     width: 1ch;
     z-index: 0;
+    font-weight: 325;
   }
 
   span.inactive {

@@ -40,6 +40,7 @@ export default styled.div<StyledProps>`
     padding: 0.75rem;
     color: var(--grey400);
     transition: 0.1s;
+    font-weight: 325;
     
     /*  Active Label Styles ----------- */
     
@@ -48,6 +49,7 @@ export default styled.div<StyledProps>`
       top: 0.375rem;
       margin-left: 0.75rem;
       font-size: 12px;
+      font-weight: 300;
       line-height: 1;
       padding: 0;
     `}
@@ -85,14 +87,14 @@ export default styled.div<StyledProps>`
   input, select, textarea {
     position: relative;
     width: 100%;
-    margin-bottom: -3px; // to position chrome autofill menu below box-shadow
-    padding: 1.25rem 0.75rem calc(0.375rem + 3px) 0.75rem;
+    margin-bottom: -0.1875rem; // to position chrome autofill menu below box-shadow
+    padding: 1.25rem 0.75rem 0.5625rem 0.75rem;
     background: transparent;
     border: none;
     box-sizing: border-box;
     font-size: 1rem;
     line-height: 1;
-    color: var(--grey700);
+    color: var(--grey900);
     z-index: 1;
 
     ${({ hasErrors }) => hasErrors && css`

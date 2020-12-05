@@ -1,5 +1,5 @@
 import { FieldProps } from "formik";
-import { Dispatch, ReactNode, RefObject } from "react";
+import { Dispatch, ReactNode, RefObject, FocusEvent, SyntheticEvent } from "react";
 
 export type DayLiteral = 'D';
 export type MonthLiteral = 'M';
@@ -25,22 +25,27 @@ export type DateInputLogicProps = Omit<DateInputProps, 'form' | 'format'> & {
   setFieldValue: FieldProps['form']['setFieldValue'];
   setTouched: FieldProps['form']['setTouched'];
   touched: FieldProps['form']['touched'];
-  getSectionIndex: (section: DateSectionName) => number;
   sectionOrder: DateSectionName[];
 }
 
 export type GenerateSectionsProps = Pick<DateInputProps, 'field'> & {
   inputRefs: InputRefs;
   sectionOrder: DateSectionName[];
+  handleBlur: SectionInputBlurHandler;
   values: string[];
 }
 
 export interface DateSectionProps {
   name: ComputedSectionName;
   maxLength: 2 | 4;
+  onBlur: SectionInputBlurHandler;
   section: DateSectionName;
   inputRef: RefObject<HTMLInputElement>;
   nextRef: RefObject<HTMLInputElement> | null;
+}
+
+interface SectionInputBlurHandler {
+  (e: FocusEvent<HTMLInputElement>): void;
 }
 
 export type DateSectionOrder = {
@@ -74,5 +79,6 @@ export interface DateInputContext {
 
 export interface ProviderProps {
   children: ReactNode;
-  getSectionIndex: (section: DateSectionName) => number;
+  sectionOrder: DateSectionName[];
+  // getSectionIndex: (section: DateSectionName) => number;
 }

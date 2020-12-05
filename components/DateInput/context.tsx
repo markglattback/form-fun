@@ -1,4 +1,5 @@
 import { createContext, useContext, useMemo, useReducer } from "react";
+import getSectionIndex from "./getSectionIndex";
 import { Action, DateSectionName, DateInputContext, ProviderProps, Values } from "./types";
 
 const initialValues: Values = {
@@ -15,10 +16,10 @@ const store = createContext<DateInputContext>({
 });
 
 
-export default function DateInputProvider({ children, getSectionIndex }: ProviderProps) {
+export default function DateInputProvider({ children, sectionOrder }: ProviderProps) {
   function reducer(prevValues: Values, action: Action): Values {
     function makeNewValues(section: DateSectionName): Pick<Values, 'valuesArray' | 'valuesString'> {
-      const index = getSectionIndex(section);
+      const index = getSectionIndex(section, sectionOrder);
 
       const newValuesArray = [...prevValues.valuesArray];
       newValuesArray[index] = action.value;
